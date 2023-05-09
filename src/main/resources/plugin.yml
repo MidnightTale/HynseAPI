@@ -2,3 +2,4 @@ name: HynseAPI
 version: '${version}'
 main: xyz.hynse.hynseapi.HynseAPI
 api-version: 1.19
+folia-supported: true
