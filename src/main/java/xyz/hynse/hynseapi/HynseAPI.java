@@ -5,6 +5,7 @@
     import org.bukkit.plugin.java.JavaPlugin;
     import xyz.hynse.hynseapi.Cache.DiscordUserIdsCache;
     import xyz.hynse.hynseapi.Cache.DiscordUsernamesCache;
+    import xyz.hynse.hynseapi.Cache.WhitelistCache;
 
     import java.io.File;
     import java.io.FileWriter;
@@ -16,8 +17,6 @@
 
         private static final Gson GSON = new Gson();
         private File DATA_FILE;
-        private DiscordUserIdsCache discordUserIdsCache;
-        private DiscordUsernamesCache discordUsernamesCache;
         private ServerDataExporter serverDataExporter;
 
         @Override
@@ -27,9 +26,10 @@
                 getDataFolder().mkdirs();
             }
             DATA_FILE = new File(getDataFolder(), "data.json");
-            discordUsernamesCache = new DiscordUsernamesCache(this);
-            discordUserIdsCache = new DiscordUserIdsCache(this);
-            serverDataExporter = new ServerDataExporter(discordUserIdsCache, discordUsernamesCache);
+            DiscordUsernamesCache discordUsernamesCache = new DiscordUsernamesCache(this);
+            DiscordUserIdsCache discordUserIdsCache = new DiscordUserIdsCache(this);
+            WhitelistCache whitelistCache = new WhitelistCache(this);
+            serverDataExporter = new ServerDataExporter(discordUserIdsCache, discordUsernamesCache, whitelistCache);
 
             // Schedule a task to run every minute
             Bukkit.getAsyncScheduler().runAtFixedRate(this, task -> exportServerData(), 0, 60, TimeUnit.SECONDS);
