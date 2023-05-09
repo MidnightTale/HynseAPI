@@ -7,6 +7,7 @@ import org.bukkit.Statistic;
 import org.bukkit.entity.Player;
 import xyz.hynse.hynseapi.Cache.DiscordUserIdsCache;
 import xyz.hynse.hynseapi.Cache.DiscordUsernamesCache;
+import xyz.hynse.hynseapi.Cache.PlayerPermissionCountCache;
 import xyz.hynse.hynseapi.Util.ServerStats;
 
 import java.util.ArrayList;
@@ -19,10 +20,13 @@ import java.util.UUID;
 public class ServerDataExporter {
     private DiscordUserIdsCache discordUserIdsCache;
     private DiscordUsernamesCache discordUsernamesCache;
+    private final PlayerPermissionCountCache whitelistCountCache = new PlayerPermissionCountCache("group.whitelist");
+
     public ServerDataExporter(DiscordUserIdsCache discordUserIdsCache, DiscordUsernamesCache discordUsernamesCache) {
         this.discordUserIdsCache = discordUserIdsCache;
         this.discordUsernamesCache = discordUsernamesCache;
     }
+
     public Map<String, Object> getServerData() {
         // Add basic server data
         Map<String, Object> data = new HashMap<>();
@@ -30,10 +34,11 @@ public class ServerDataExporter {
         data.put("online", Bukkit.getOnlinePlayers().size());
         data.put("max_online", Bukkit.getMaxPlayers());
         data.put("total_join", Bukkit.getOfflinePlayers().length);
-        data.put("group_whitelist_count", serverStats.getPlayersWithPermission());
+        data.put("group_whitelist_count", whitelistCountCache.getCount());
         data.put("server_age", serverStats.getServerAgeInDays());
         data.put("world_size_global_gb", serverStats.getWorldSizeInGB());
         data.put("version_git", Bukkit.getVersion());
+
 
         // Add top player data
         List<OfflinePlayer> allPlayers = new ArrayList<>(Arrays.asList(Bukkit.getOfflinePlayers()));

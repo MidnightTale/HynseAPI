@@ -1,25 +1,9 @@
 package xyz.hynse.hynseapi.Util;
 import org.bukkit.Bukkit;
-import org.bukkit.entity.Player;
-import org.bukkit.permissions.Permission;
-
 import java.io.File;
 import java.util.Objects;
 
 public class ServerStats {
-
-    public int getPlayersWithPermission() {
-        int count = 0;
-        Permission perm = new Permission("group.whitelist");
-
-        for (Player player : Bukkit.getOnlinePlayers()) {
-            if (player.hasPermission(perm)) {
-                count++;
-            }
-        }
-
-        return count;
-    }
 
     public long getServerAgeInDays() {
         long worldTimeInTicks = Bukkit.getServer().getWorlds().get(0).getFullTime();
