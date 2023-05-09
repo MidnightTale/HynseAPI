@@ -23,7 +23,9 @@
         private static final Gson GSON = new Gson();
         private File DATA_FILE;
         private File DISCORD_IDS_CACHE_FILE;
+        private File DISCORD_USERNAMES_CACHE_FILE;
         private Map<UUID, String> discordUserIdsCache;
+        private Map<UUID, String> discordUserNamesCache;
 
         @Override
         public void onEnable() {
@@ -34,6 +36,8 @@
             DATA_FILE = new File(getDataFolder(), "data.json");
             DISCORD_IDS_CACHE_FILE = new File(getDataFolder(), "discordUserIdsCache.json");
             loadDiscordUserIdsCache();
+            DISCORD_USERNAMES_CACHE_FILE = new File(getDataFolder(), "discordUserNamesCache.json");
+            loadDiscordUserNamesCache();
 
             // Schedule a task to run every minute
             Bukkit.getAsyncScheduler().runAtFixedRate(this, task -> exportServerData(), 0, 60, TimeUnit.SECONDS);
@@ -58,6 +62,30 @@
                 GSON.toJson(discordUserIdsCache, writer);
             } catch (IOException e) {
                 getLogger().warning("Failed to save Discord User IDs cache.");
+                e.printStackTrace();
+            }
+        }
+
+        private void loadDiscordUserNamesCache() {
+            if (!DISCORD_USERNAMES_CACHE_FILE.exists()) {
+                discordUserNamesCache = new HashMap<>();
+                return;
+            }
+
+            try (FileReader reader = new FileReader(DISCORD_USERNAMES_CACHE_FILE)) {
+                Type type = new TypeToken<HashMap<UUID, String>>(){}.getType();
+                discordUserNamesCache = GSON.fromJson(reader, type);
+            } catch (IOException e) {
+                getLogger().warning("Failed to load Discord User Names cache.");
+                e.printStackTrace();
+                discordUserNamesCache = new HashMap<>();
+            }
+        }
+        private void saveDiscordUserNamesCache() {
+            try (FileWriter writer = new FileWriter(DISCORD_USERNAMES_CACHE_FILE)) {
+                GSON.toJson(discordUserNamesCache, writer);
+            } catch (IOException e) {
+                getLogger().warning("Failed to save Discord User Names cache.");
                 e.printStackTrace();
             }
         }
@@ -88,17 +116,33 @@
                 data.put("top_uuid_" + (i + 1), playerUUID);
                 data.put("top_time_" + (i + 1), onlineTimeSeconds);
 
-                // Add DiscordSRV user ID if available
+                // Add DiscordSRV user ID and user name if available
                 UUID uuid = player.getUniqueId();
                 if (player.isOnline() && Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
-                    String discordUserId = PlaceholderAPI.setPlaceholders((Player) player, "%discordsrv_user_id%");
+                    Player onlinePlayer = (Player) player;
+                    String discordUserId = PlaceholderAPI.setPlaceholders(onlinePlayer, "%discordsrv_user_id%");
+                    String discordUserName = PlaceholderAPI.setPlaceholders(onlinePlayer, "%discordsrv_user_name%");
+
                     if (!discordUserId.equals(discordUserIdsCache.get(uuid))) {
                         discordUserIdsCache.put(uuid, discordUserId);
                         saveDiscordUserIdsCache();
                     }
-                }
-                if (discordUserIdsCache.containsKey(uuid)) {
-                    data.put("top_placeholder_data_from_discordsrv_user_id_" + (i + 1), discordUserIdsCache.get(uuid));
+
+                    // Store Discord username in cache
+                    if (!discordUserName.equals(discordUserNamesCache.get(uuid))) {
+                        discordUserNamesCache.put(uuid, discordUserName);
+                        saveDiscordUserNamesCache();
+                    }
+
+                    data.put("top_discord_user_id_" + (i + 1), discordUserIdsCache.get(uuid));
+                    data.put("top_discord_user_name_" + (i + 1), discordUserNamesCache.get(uuid));
+                } else {
+                    if (discordUserIdsCache.containsKey(uuid)) {
+                        data.put("top_discord_user_id_" + (i + 1), discordUserIdsCache.get(uuid));
+                    }
+                    if (discordUserNamesCache.containsKey(uuid)) {
+                        data.put("top_discord_user_name_" + (i + 1), discordUserNamesCache.get(uuid));
+                    }
                 }
             }
 
@@ -111,12 +155,6 @@
                 e.printStackTrace();
             }
         }
-
-
-
-
-
-
 
         private int getPlayersWithPermission() {
             int count = 0;
