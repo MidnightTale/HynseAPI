@@ -43,12 +43,19 @@ public class ServerDataExporter {
             OfflinePlayer player = allPlayers.get(i);
             String playerName = player.getName();
             String playerUUID = player.getUniqueId().toString();
-            double onlineTimeSeconds = player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20.0;
+            int onlineTimeSeconds = player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
+
+            int days = onlineTimeSeconds / (24 * 60 * 60);
+            int hours = (onlineTimeSeconds % (24 * 60 * 60)) / (60 * 60);
+            int minutes = (onlineTimeSeconds % (60 * 60)) / 60;
 
             // Add the player data to the main server data map
             data.put("top_username_" + (i + 1), playerName);
             data.put("top_uuid_" + (i + 1), playerUUID);
-            data.put("top_time_" + (i + 1), onlineTimeSeconds);
+            data.put("top_time_day_" + (i + 1), days);
+            data.put("top_time_hour_" + (i + 1), hours);
+            data.put("top_time_minute_" + (i + 1), minutes);
+
 
             // Add DiscordSRV user ID and user name if available
             UUID uuid = player.getUniqueId();
