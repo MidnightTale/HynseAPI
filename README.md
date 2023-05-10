@@ -4,4 +4,7 @@ for use on hynse website
 
 ![image](https://github.com/MidnightTale/HynseAPI/assets/125941391/d91319de-e2da-49eb-b317-81dfcf78e7de)
 
-API https://api.hynse.xyz/v1/data.json
+## API
+https://api.hynse.xyz/v2/discord/members
+https://api.hynse.xyz/v2/discord/widget
+https://api.hynse.xyz/v1/data.json
