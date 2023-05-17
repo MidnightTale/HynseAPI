@@ -26,6 +26,12 @@ public class ServerDataExporter {
         // Add basic server data
         Map<String, Object> data = new HashMap<>();
         ServerStats serverStats = new ServerStats();
+        List<String> onlinePlayerNames = serverStats.getOnlinePlayerNames();
+        List<String> bannedPlayerNames = serverStats.getBannedPlayerNames();
+        int bannedPlayerCount = serverStats.getBannedPlayerCount();
+        data.put("banned_player_count", bannedPlayerCount);
+        data.put("banned_players", bannedPlayerNames);
+        data.put("online_players", onlinePlayerNames);
         data.put("online", Bukkit.getOnlinePlayers().size());
         data.put("max_online", Bukkit.getMaxPlayers());
         data.put("total_join", Bukkit.getOfflinePlayers().length);
