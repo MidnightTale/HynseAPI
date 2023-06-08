@@ -6,6 +6,7 @@
     import xyz.hynse.hynseapi.Cache.DiscordUserIdsCache;
     import xyz.hynse.hynseapi.Cache.DiscordUsernamesCache;
     import xyz.hynse.hynseapi.Util.BlockPlaceListener;
+    import xyz.hynse.hynseapi.Util.SchedulerUtil;
 
     import java.io.File;
     import java.io.FileWriter;
@@ -31,7 +32,7 @@
             serverDataExporter = new ServerDataExporter(discordUserIdsCache, discordUsernamesCache);
 
             // Schedule a task to run every minute
-            Bukkit.getAsyncScheduler().runAtFixedRate(this, task -> exportServerData(), 0, 60, TimeUnit.SECONDS);
+            SchedulerUtil.runAsyncFixRateScheduler(this, this::exportServerData, 0, 60);
             Bukkit.getPluginManager().registerEvents(new BlockPlaceListener(this), this);
         }
 
