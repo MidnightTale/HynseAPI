@@ -67,9 +67,10 @@
                     if (!isRateLimited(clientIP)) {
                         String requestURI = exchange.getRequestURI().toString();
                         String[] parts = requestURI.split("/");
-                        if (parts.length == 3 && parts[2].length() == 36) {
-                            String playerUUID = parts[2];
-                            Map<String, Object> playerData = serverDataExporter.getPlayerDataByUUID(playerUUID);
+                        if (parts.length == 3 && parts[2].length() == 32) { // Check if UUID is trimmed to 32 characters
+                            // Add dashes to the trimmed UUID
+                            String playerUUIDWithDashes = parts[2].substring(0, 8) + "-" + parts[2].substring(8, 12) + "-" + parts[2].substring(12, 16) + "-" + parts[2].substring(16, 20) + "-" + parts[2].substring(20);
+                            Map<String, Object> playerData = serverDataExporter.getPlayerDataByUUID(playerUUIDWithDashes);
 
                             if (playerData != null) {
                                 String response = GSON.toJson(playerData);
