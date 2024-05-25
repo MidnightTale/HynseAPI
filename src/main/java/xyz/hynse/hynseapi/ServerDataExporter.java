@@ -92,6 +92,7 @@ public class ServerDataExporter {
         }
         return data;
     }
+
     public Map<String, Object> getPlayerDataByUUID(UUID playerUUID) {
         // Use UUID to get player data
         OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
@@ -99,29 +100,30 @@ public class ServerDataExporter {
             return null;
         }
 
-        Map<String, Object> data = new HashMap<>();
-        data.put("name", player.getName());
-        data.put("uuid", player.getUniqueId().toString());
+        Map<String, Object> dataplayer = new HashMap<>();
+        dataplayer.put("name", player.getName());
+        dataplayer.put("uuid", player.getUniqueId().toString());
         // Calculate playtime in seconds and format it
         int onlineTimeSeconds = player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
-        data.put("online_time_seconds", onlineTimeSeconds);
+        dataplayer.put("online_time_seconds", onlineTimeSeconds);
+
 
         int days = (int) TimeUnit.SECONDS.toDays(onlineTimeSeconds);
         int hours = (int) (TimeUnit.SECONDS.toHours(onlineTimeSeconds) % 24);
         int minutes = (int) (TimeUnit.SECONDS.toMinutes(onlineTimeSeconds) % 60);
-        data.put("playtime", String.format("%d days, %d hours, %d minutes", days, hours, minutes));
+        dataplayer.put("playtime", String.format("%d days, %d hours, %d minutes", days, hours, minutes));
 
         // Add join date
         Date joinDate = new Date(player.getFirstPlayed());
         SimpleDateFormat dateFormat = new SimpleDateFormat("yyyy-MM-dd HH:mm:ss");
-        data.put("join_since", dateFormat.format(joinDate));
+        dataplayer.put("join_since", dateFormat.format(joinDate));
 
         // Add player level (if the player is online)
         if (player.isOnline()) {
             Player onlinePlayer = (Player) player;
-            data.put("level", onlinePlayer.getLevel());
+            dataplayer.put("level", onlinePlayer.getLevel());
         } else {
-            data.put("level", "N/A"); // Level is not available if the player is offline
+            dataplayer.put("level", "N/A"); // Level is not available if the player is offline
         }
 
         // Add blocks mined and placed statistics
@@ -133,18 +135,21 @@ public class ServerDataExporter {
                 blocksPlaced += player.getStatistic(Statistic.USE_ITEM, material);
             }
         }
-        data.put("blocks_mined", blocksMined);
-        data.put("blocks_placed", blocksPlaced);
+        dataplayer.put("blocks_mined", blocksMined);
+        dataplayer.put("blocks_placed", blocksPlaced);
 
         // Add entities killed and deaths statistics
         int entitiesKilled = 0;
         for (EntityType entityType : EntityType.values()) {
-            entitiesKilled += player.getStatistic(Statistic.KILL_ENTITY, entityType);
+            // Check if EntityType is not UNKNOWN before accessing the statistic
+            if (entityType != EntityType.UNKNOWN) {
+                entitiesKilled += player.getStatistic(Statistic.KILL_ENTITY, entityType);
+            }
         }
         int deaths = player.getStatistic(Statistic.DEATHS);
 
-        data.put("entities_killed", entitiesKilled);
-        data.put("deaths", deaths);
+        dataplayer.put("entities_killed", entitiesKilled);
+        dataplayer.put("deaths", deaths);
 
         UUID uuid = player.getUniqueId();
         if (player.isOnline() && Bukkit.getPluginManager().getPlugin("PlaceholderAPI") != null) {
@@ -162,17 +167,19 @@ public class ServerDataExporter {
                 discordUsernamesCache.saveDiscordUserNamesCache();
             }
 
-            data.put("discord_user_id", discordUserIdsCache.getDiscordUserIdsCache().get(uuid));
-            data.put("discord_user_name", discordUsernamesCache.getDiscordUserNamesCache().get(uuid));
+            dataplayer.put("discord_user_id", discordUserIdsCache.getDiscordUserIdsCache().get(uuid));
+            dataplayer.put("discord_user_name", discordUsernamesCache.getDiscordUserNamesCache().get(uuid));
         } else {
             if (discordUserIdsCache.getDiscordUserIdsCache().containsKey(uuid)) {
-                data.put("discord_user_id", discordUserIdsCache.getDiscordUserIdsCache().get(uuid));
+                dataplayer.put("discord_user_id", discordUserIdsCache.getDiscordUserIdsCache().get(uuid));
             }
             if (discordUsernamesCache.getDiscordUserNamesCache().containsKey(uuid)) {
-                data.put("discord_user_name", discordUsernamesCache.getDiscordUserNamesCache().get(uuid));
+                dataplayer.put("discord_user_name", discordUsernamesCache.getDiscordUserNamesCache().get(uuid));
             }
         }
 
-        return data;
+        return dataplayer;
     }
+
+
 }

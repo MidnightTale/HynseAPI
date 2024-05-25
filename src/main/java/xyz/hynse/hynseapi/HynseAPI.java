@@ -5,7 +5,11 @@ import com.sun.net.httpserver.HttpServer;
 import io.github.retrooper.packetevents.util.folia.FoliaScheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.player.PlayerJoinEvent;
 import org.bukkit.plugin.java.JavaPlugin;
+import org.jetbrains.annotations.NotNull;
 import xyz.hynse.hynseapi.Cache.DiscordUserIdsCache;
 import xyz.hynse.hynseapi.Cache.DiscordUsernamesCache;
 
@@ -14,13 +18,14 @@ import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
+import java.nio.file.Files;
 import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.Executors;
 import java.util.concurrent.TimeUnit;
 
-public final class HynseAPI extends JavaPlugin {
+public final class HynseAPI extends JavaPlugin implements Listener {
 
     private static final Gson GSON = new Gson();
     private File DATA_FILE;
@@ -42,15 +47,31 @@ public final class HynseAPI extends JavaPlugin {
 
         // Schedule a task to run every 30 min
         FoliaScheduler.getGlobalRegionScheduler().runAtFixedRate(this, this::exportServerData, 1, 36000);
+        getServer().getPluginManager().registerEvents(this, this);
 
-        startHttpServer();
+//        startHttpServer();
     }
     private void exportServerData(Object ignored) {
         // Your existing exportServerData() implementation
         Map<String, Object> data = serverDataExporter.getServerData();
-        // Write the server data to a file
+
+        // Define the directory path
+        File webDirectory = new File(getDataFolder(), "web");
+
+        // Check if the web directory exists, create it if it doesn't
+        if (!webDirectory.exists()) {
+            if (!webDirectory.mkdirs()) {
+                getLogger().warning("Failed to create web directory.");
+                return;
+            }
+        }
+
+        // Define the file path within the web directory
+        File serverDataFile = new File(webDirectory, "server.json");
+
+        // Write the server data to the server.json file
         String json = GSON.toJson(data);
-        try (FileWriter writer = new FileWriter(DATA_FILE)) {
+        try (FileWriter writer = new FileWriter(serverDataFile)) {
             writer.write(json);
         } catch (IOException e) {
             getLogger().warning("Failed to export server data.");
@@ -58,50 +79,54 @@ public final class HynseAPI extends JavaPlugin {
         }
     }
 
+    @EventHandler
+    public void onPlayerJoin(PlayerJoinEvent event) {
+        // Get the joined player
+        OfflinePlayer player = event.getPlayer();
+        UUID playerUUID = player.getUniqueId();
+
+        // Ensure the directory exists
+        File playerDirectory = new File(getDataFolder() + "/web/player/");
+        if (!playerDirectory.exists()) {
+            playerDirectory.mkdirs(); // Create the directory if it doesn't exist
+        }
+
+        // Fetch player data and write it to a file
+        Map<String, Object> playerData = serverDataExporter.getPlayerDataByUUID(playerUUID);
+        if (playerData != null) {
+            // Write player data to file
+            File playerFile = new File(playerDirectory, playerUUID + ".json");
+            try (FileWriter writer = new FileWriter(playerFile)) {
+                String json = GSON.toJson(playerData);
+                writer.write(json);
+            } catch (IOException e) {
+                getLogger().warning("Failed to write player data for " + player.getName());
+                e.printStackTrace();
+            }
+        }
+    }
+
     private void startHttpServer() {
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(7699), 0);
-            server.createContext("/player", exchange -> {
+            server.createContext("/", exchange -> {
                 // Log the received request
                 getLogger().info("Received request: " + exchange.getRequestURI().toString());
 
                 String requestURI = exchange.getRequestURI().toString();
-                String[] parts = requestURI.split("/");
-                if (parts.length == 3) {
-                    String identifier = parts[2];
-                    getLogger().info("Identifier: " + identifier);
-                    Map<String, Object> playerData;
+                File requestedFile = new File(getDataFolder() + "/web" + requestURI);
 
-                    // Check if the identifier is a valid UUID
-                    try {
-                        UUID playerUUID = UUID.fromString(identifier);
-                        getLogger().info("Player UUID: " + playerUUID.toString());
-                        playerData = serverDataExporter.getPlayerDataByUUID(playerUUID);
-                    } catch (IllegalArgumentException e) {
-                        // Identifier is not a valid UUID
-                        getLogger().warning("Invalid UUID: " + identifier);
-                        playerData = null;
-                    }
-
-                    if (playerData != null) {
-                        String response = GSON.toJson(playerData);
-                        exchange.getResponseHeaders().set("Content-Type", "application/json");
-                        exchange.sendResponseHeaders(200, response.getBytes().length);
-                        OutputStream os = exchange.getResponseBody();
-                        os.write(response.getBytes());
-                        os.close();
-                    } else {
-                        String response = "Player not found";
-                        exchange.getResponseHeaders().set("Content-Type", "text/plain");
-                        exchange.sendResponseHeaders(404, response.getBytes().length);
-                        OutputStream os = exchange.getResponseBody();
-                        os.write(response.getBytes());
-                        os.close();
-                    }
+                if (requestedFile.exists()) {
+                    // Serve the requested file
+                    byte[] fileContent = Files.readAllBytes(requestedFile.toPath());
+                    exchange.sendResponseHeaders(200, fileContent.length);
+                    OutputStream os = exchange.getResponseBody();
+                    os.write(fileContent);
+                    os.close();
                 } else {
-                    String response = "Invalid request";
-                    exchange.getResponseHeaders().set("Content-Type", "text/plain");
-                    exchange.sendResponseHeaders(400, response.getBytes().length);
+                    // If the requested file doesn't exist, respond with 404 Not Found
+                    String response = "File not found";
+                    exchange.sendResponseHeaders(404, response.getBytes().length);
                     OutputStream os = exchange.getResponseBody();
                     os.write(response.getBytes());
                     os.close();
@@ -115,6 +140,8 @@ public final class HynseAPI extends JavaPlugin {
             e.printStackTrace();
         }
     }
+
+
 
 
     private boolean isRateLimited(String clientIP) {
