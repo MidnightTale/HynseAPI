@@ -2,6 +2,7 @@ package xyz.hynse.hynseapi;
 
 import com.google.gson.Gson;
 import com.sun.net.httpserver.HttpServer;
+import io.github.retrooper.packetevents.util.folia.FoliaScheduler;
 import org.bukkit.Bukkit;
 import org.bukkit.OfflinePlayer;
 import org.bukkit.plugin.java.JavaPlugin;
@@ -9,6 +10,7 @@ import xyz.hynse.hynseapi.Cache.DiscordUserIdsCache;
 import xyz.hynse.hynseapi.Cache.DiscordUsernamesCache;
 
 import java.io.File;
+import java.io.FileWriter;
 import java.io.IOException;
 import java.io.OutputStream;
 import java.net.InetSocketAddress;
@@ -39,9 +41,21 @@ public final class HynseAPI extends JavaPlugin {
         serverDataExporter = new ServerDataExporter(discordUserIdsCache, discordUsernamesCache);
 
         // Schedule a task to run every minute
-        SchedulerUtil.runAsyncFixRateScheduler(this, this::exportServerData, 0, 60);
+        FoliaScheduler.getGlobalRegionScheduler().runAtFixedRate(this, this::exportServerData, 1, 36000);
 
         startHttpServer();
+    }
+    private void exportServerData(Object ignored) {
+        // Your existing exportServerData() implementation
+        Map<String, Object> data = serverDataExporter.getServerData();
+        // Write the server data to a file
+        String json = GSON.toJson(data);
+        try (FileWriter writer = new FileWriter(DATA_FILE)) {
+            writer.write(json);
+        } catch (IOException e) {
+            getLogger().warning("Failed to export server data.");
+            e.printStackTrace();
+        }
     }
 
     private void startHttpServer() {
