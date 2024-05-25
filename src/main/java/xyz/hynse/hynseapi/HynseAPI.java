@@ -62,56 +62,40 @@ public final class HynseAPI extends JavaPlugin {
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(7699), 0);
             server.createContext("/player", exchange -> {
-                String clientIP = exchange.getRemoteAddress().getAddress().getHostAddress();
-                if (!isRateLimited(clientIP)) {
-                    String requestURI = exchange.getRequestURI().toString();
-                    String[] parts = requestURI.split("/");
-                    if (parts.length == 3) {
-                        String identifier = parts[2];
-                        Map<String, Object> playerData;
+                String requestURI = exchange.getRequestURI().toString();
+                String[] parts = requestURI.split("/");
+                if (parts.length == 3) {
+                    String identifier = parts[2];
+                    Map<String, Object> playerData;
 
-                        // Check if the identifier is a trimmed UUID
-                        if (identifier.length() == 32) {
-                            String playerUUIDWithDashes = identifier.substring(0, 8) + "-" + identifier.substring(8, 12) + "-" + identifier.substring(12, 16) + "-" + identifier.substring(16, 20) + "-" + identifier.substring(20);
-                            playerData = serverDataExporter.getPlayerDataByUUID(playerUUIDWithDashes);
-                        } else {
-                            // Check if the identifier is a valid UUID
-                            try {
-                                UUID playerUUID = UUID.fromString(identifier);
-                                playerData = serverDataExporter.getPlayerDataByUUID(playerUUID.toString());
-                            } catch (IllegalArgumentException e) {
-                                // Identifier is not a valid UUID, assume it's a player name
-                                playerData = serverDataExporter.getPlayerDataByName(identifier);
-                            }
-                        }
+                    // Check if the identifier is a valid UUID
+                    try {
+                        UUID playerUUID = UUID.fromString(identifier);
+                        playerData = serverDataExporter.getPlayerDataByUUID(playerUUID);
+                    } catch (IllegalArgumentException e) {
+                        // Identifier is not a valid UUID
+                        playerData = null;
+                    }
 
-                        if (playerData != null) {
-                            String response = GSON.toJson(playerData);
-                            exchange.getResponseHeaders().set("Content-Type", "application/json"); // Set content type to JSON
-                            exchange.sendResponseHeaders(200, response.getBytes().length);
-                            OutputStream os = exchange.getResponseBody();
-                            os.write(response.getBytes());
-                            os.close();
-                        } else {
-                            String response = "Player not found";
-                            exchange.getResponseHeaders().set("Content-Type", "text/plain"); // Set content type to plain text
-                            exchange.sendResponseHeaders(404, response.getBytes().length);
-                            OutputStream os = exchange.getResponseBody();
-                            os.write(response.getBytes());
-                            os.close();
-                        }
+                    if (playerData != null) {
+                        String response = GSON.toJson(playerData);
+                        exchange.getResponseHeaders().set("Content-Type", "application/json");
+                        exchange.sendResponseHeaders(200, response.getBytes().length);
+                        OutputStream os = exchange.getResponseBody();
+                        os.write(response.getBytes());
+                        os.close();
                     } else {
-                        String response = "Invalid request";
-                        exchange.getResponseHeaders().set("Content-Type", "text/plain"); // Set content type to plain text
-                        exchange.sendResponseHeaders(400, response.getBytes().length);
+                        String response = "Player not found";
+                        exchange.getResponseHeaders().set("Content-Type", "text/plain");
+                        exchange.sendResponseHeaders(404, response.getBytes().length);
                         OutputStream os = exchange.getResponseBody();
                         os.write(response.getBytes());
                         os.close();
                     }
                 } else {
-                    String response = "Rate limit exceeded";
-                    exchange.getResponseHeaders().set("Content-Type", "text/plain"); // Set content type to plain text
-                    exchange.sendResponseHeaders(429, response.getBytes().length);
+                    String response = "Invalid request";
+                    exchange.getResponseHeaders().set("Content-Type", "text/plain");
+                    exchange.sendResponseHeaders(400, response.getBytes().length);
                     OutputStream os = exchange.getResponseBody();
                     os.write(response.getBytes());
                     os.close();

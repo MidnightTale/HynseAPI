@@ -92,19 +92,9 @@ public class ServerDataExporter {
         }
         return data;
     }
-    public Map<String, Object> getPlayerDataByName(String playerName) {
-        // Get player data by name
-        OfflinePlayer player = Bukkit.getOfflinePlayer(playerName);
-        if (player == null || !player.hasPlayedBefore()) {
-            return null;
-        }
-        // Get player data by UUID
-        return getPlayerDataByUUID(player.getUniqueId().toString());
-    }
-
-    public Map<String, Object> getPlayerDataByUUID(String playerUUID) {
+    public Map<String, Object> getPlayerDataByUUID(UUID playerUUID) {
         // Use UUID to get player data
-        OfflinePlayer player = Bukkit.getOfflinePlayer(UUID.fromString(playerUUID));
+        OfflinePlayer player = Bukkit.getOfflinePlayer(playerUUID);
         if (player == null || !player.hasPlayedBefore()) {
             return null;
         }
@@ -112,7 +102,6 @@ public class ServerDataExporter {
         Map<String, Object> data = new HashMap<>();
         data.put("name", player.getName());
         data.put("uuid", player.getUniqueId().toString());
-
         // Calculate playtime in seconds and format it
         int onlineTimeSeconds = player.getStatistic(Statistic.PLAY_ONE_MINUTE) / 20;
         data.put("online_time_seconds", onlineTimeSeconds);
