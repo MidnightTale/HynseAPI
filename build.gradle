@@ -9,12 +9,21 @@ version = '1.2-SNAPSHOT'
 repositories {
     mavenCentral()
     maven {
-        name = "papermc-repo"
-        url = "https://repo.papermc.io/repository/maven-public/"
+        name = "spigotmc-repo"
+        url = "https://hub.spigotmc.org/nexus/content/repositories/snapshots/"
     }
     maven {
         name = "sonatype"
         url = "https://oss.sonatype.org/content/groups/public/"
+    }
+
+    maven { url 'https://repo.codemc.io/repository/maven-releases/' }
+    maven {
+        name = "jitpack"
+        url = "https://jitpack.io/"
+    }
+    maven {
+        url = uri("https://repo.papermc.io/repository/maven-public/")
     }
     maven {
         url = 'https://repo.extendedclip.com/content/repositories/placeholderapi/'

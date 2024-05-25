@@ -39,7 +39,6 @@ public final class HynseAPI extends JavaPlugin {
         serverDataExporter = new ServerDataExporter(discordUserIdsCache, discordUsernamesCache);
 
         // Schedule a task to run every minute
-
         SchedulerUtil.runAsyncFixRateScheduler(this, this::exportServerData, 0, 60);
 
         startHttpServer();
