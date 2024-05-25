@@ -6,8 +6,8 @@
     import org.bukkit.plugin.java.JavaPlugin;
     import xyz.hynse.hynseapi.Cache.DiscordUserIdsCache;
     import xyz.hynse.hynseapi.Cache.DiscordUsernamesCache;
-    import xyz.hynse.hynseapi.Util.BlockPlaceListener;
-    import xyz.hynse.hynseapi.Util.SchedulerUtil;
+//    import xyz.hynse.hynseapi.Util.BlockPlaceListener;
+//    import xyz.hynse.hynseapi.Util.SchedulerUtil;
 
     import java.io.File;
     import java.io.FileWriter;
@@ -41,8 +41,8 @@
             serverDataExporter = new ServerDataExporter(discordUserIdsCache, discordUsernamesCache);
 
             // Schedule a task to run every minute
-            SchedulerUtil.runGlobalFixRateScheduler(this, this::exportServerData, 1, 60);
-            Bukkit.getPluginManager().registerEvents(new BlockPlaceListener(this), this);
+//            SchedulerUtil.runGlobalFixRateScheduler(this, this::exportServerData, 1, 60);
+//            Bukkit.getPluginManager().registerEvents(new BlockPlaceListener(this), this);
             startHttpServer();
         }
 
@@ -65,10 +65,11 @@
                 server.createContext("/player", exchange -> {
                     String clientIP = exchange.getRemoteAddress().getAddress().getHostAddress();
                     if (!isRateLimited(clientIP)) {
-                        String query = exchange.getRequestURI().getQuery();
-                        if (query != null && query.startsWith("name=")) {
-                            String playerName = query.split("=")[1];
-                            Map<String, Object> playerData = serverDataExporter.getPlayerData(playerName);
+                        String requestURI = exchange.getRequestURI().toString();
+                        String[] parts = requestURI.split("/");
+                        if (parts.length == 3 && parts[2].length() == 36) {
+                            String playerUUID = parts[2];
+                            Map<String, Object> playerData = serverDataExporter.getPlayerDataByUUID(playerUUID);
 
                             if (playerData != null) {
                                 String response = GSON.toJson(playerData);
@@ -106,6 +107,7 @@
                 e.printStackTrace();
             }
         }
+
 
         private boolean isRateLimited(String clientIP) {
             RateLimiter rateLimiter = RATE_LIMITERS.computeIfAbsent(clientIP, k -> new RateLimiter(MAX_REQUESTS_PER_MINUTE, 1, TimeUnit.MINUTES));
