@@ -40,7 +40,7 @@ public final class HynseAPI extends JavaPlugin {
         DiscordUserIdsCache discordUserIdsCache = new DiscordUserIdsCache(this);
         serverDataExporter = new ServerDataExporter(discordUserIdsCache, discordUsernamesCache);
 
-        // Schedule a task to run every minute
+        // Schedule a task to run every 30 min
         FoliaScheduler.getGlobalRegionScheduler().runAtFixedRate(this, this::exportServerData, 1, 36000);
 
         startHttpServer();
