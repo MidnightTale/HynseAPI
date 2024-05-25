@@ -92,6 +92,15 @@ public class ServerDataExporter {
         }
         return data;
     }
+    public Map<String, Object> getPlayerDataByName(String playerName) {
+        // Get player data by name
+        OfflinePlayer player = Bukkit.getOfflinePlayer(playerName);
+        if (player == null || !player.hasPlayedBefore()) {
+            return null;
+        }
+        // Get player data by UUID
+        return getPlayerDataByUUID(player.getUniqueId().toString());
+    }
 
     public Map<String, Object> getPlayerDataByUUID(String playerUUID) {
         // Use UUID to get player data
