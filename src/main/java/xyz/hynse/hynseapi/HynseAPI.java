@@ -1,6 +1,7 @@
     package xyz.hynse.hynseapi;
 
     import com.google.gson.Gson;
+    import com.sun.net.httpserver.HttpServer;
     import org.bukkit.Bukkit;
     import org.bukkit.plugin.java.JavaPlugin;
     import xyz.hynse.hynseapi.Cache.DiscordUserIdsCache;
@@ -11,7 +12,10 @@
     import java.io.File;
     import java.io.FileWriter;
     import java.io.IOException;
+    import java.io.OutputStream;
+    import java.net.InetSocketAddress;
     import java.util.Map;
+    import java.util.concurrent.Executors;
     import java.util.concurrent.TimeUnit;
 
     public final class HynseAPI extends JavaPlugin {
@@ -32,8 +36,9 @@
             serverDataExporter = new ServerDataExporter(discordUserIdsCache, discordUsernamesCache);
 
             // Schedule a task to run every minute
-            SchedulerUtil.runAsyncFixRateScheduler(this, this::exportServerData, 0, 60);
+            SchedulerUtil.runGlobalFixRateScheduler(this, this::exportServerData, 1, 60);
             Bukkit.getPluginManager().registerEvents(new BlockPlaceListener(this), this);
+            startHttpServer();
         }
 
         private void exportServerData() {
@@ -46,6 +51,44 @@
                 writer.write(json);
             } catch (IOException e) {
                 getLogger().warning("Failed to export server data.");
+                e.printStackTrace();
+            }
+        }
+        private void startHttpServer() {
+            try {
+                HttpServer server = HttpServer.create(new InetSocketAddress(7697), 0);
+                server.createContext("/player", exchange -> {
+                    String query = exchange.getRequestURI().getQuery();
+                    if (query != null && query.startsWith("name=")) {
+                        String playerName = query.split("=")[1];
+                        Map<String, Object> playerData = serverDataExporter.getPlayerData(playerName);
+
+                        if (playerData != null) {
+                            String response = GSON.toJson(playerData);
+                            exchange.sendResponseHeaders(200, response.getBytes().length);
+                            OutputStream os = exchange.getResponseBody();
+                            os.write(response.getBytes());
+                            os.close();
+                        } else {
+                            String response = "Player not found";
+                            exchange.sendResponseHeaders(404, response.getBytes().length);
+                            OutputStream os = exchange.getResponseBody();
+                            os.write(response.getBytes());
+                            os.close();
+                        }
+                    } else {
+                        String response = "Invalid request";
+                        exchange.sendResponseHeaders(400, response.getBytes().length);
+                        OutputStream os = exchange.getResponseBody();
+                        os.write(response.getBytes());
+                        os.close();
+                    }
+                });
+                server.setExecutor(Executors.newCachedThreadPool());
+                server.start();
+                getLogger().info("HTTP server started on port 8080");
+            } catch (IOException e) {
+                getLogger().severe("Failed to start HTTP server");
                 e.printStackTrace();
             }
         }

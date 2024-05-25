@@ -29,6 +29,15 @@ public class SchedulerUtil {
                 Bukkit.getScheduler().runTaskTimerAsynchronously(plugin, runnable, initialDelayTicks * 20L, periodTicks * 20L);
             }
         }
+
+        public static void runGlobalFixRateScheduler(Plugin plugin, Runnable runnable, int initialDelayTicks, int periodTicks) {
+            if (isFolia()) {
+                Bukkit.getGlobalRegionScheduler().runAtFixedRate(plugin, (task) -> runnable.run(), initialDelayTicks * 20L, periodTicks * 20L);
+            } else {
+                Bukkit.getScheduler().runTaskTimer(plugin, runnable, initialDelayTicks * 20L, periodTicks * 20L);
+            }
+        }
+
         public static void runAsyncnow(Plugin plugin, Runnable runnable) {
             if (isFolia()) {
                 Bukkit.getAsyncScheduler().runNow(plugin, (task) -> runnable.run());
