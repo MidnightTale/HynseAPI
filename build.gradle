@@ -1,5 +1,6 @@
 plugins {
     id 'java'
+    id("io.github.goooler.shadow") version "8.1.7"
 }
 
 group = 'xyz.hynse'
@@ -22,6 +23,7 @@ repositories {
 
 dependencies {
 //    compileOnly "dev.folia:folia-api:1.20.4-R0.1-SNAPSHOT"
+    implementation  'com.github.retrooper.packetevents:spigot:2.3.0'
     compileOnly("io.papermc.paper:paper-api:1.20.6-R0.1-SNAPSHOT")
     compileOnly 'me.clip:placeholderapi:2.11.6'
 }
@@ -39,6 +41,12 @@ tasks.withType(JavaCompile).configureEach {
     if (targetJavaVersion >= 10 || JavaVersion.current().isJava10Compatible()) {
         options.release = targetJavaVersion
     }
+}
+shadowJar {
+    // Define the desired JAR file name format
+    minimize()
+    relocate 'com.github.retrooper.packetevents', 'xyz.hynse.hynseapi.packetevents.api'
+    archiveFileName.set("${rootProject.name}-${version}.jar")
 }
 
 processResources {
