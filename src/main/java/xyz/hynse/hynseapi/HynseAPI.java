@@ -62,18 +62,24 @@ public final class HynseAPI extends JavaPlugin {
         try {
             HttpServer server = HttpServer.create(new InetSocketAddress(7699), 0);
             server.createContext("/player", exchange -> {
+                // Log the received request
+                getLogger().info("Received request: " + exchange.getRequestURI().toString());
+
                 String requestURI = exchange.getRequestURI().toString();
                 String[] parts = requestURI.split("/");
                 if (parts.length == 3) {
                     String identifier = parts[2];
+                    getLogger().info("Identifier: " + identifier);
                     Map<String, Object> playerData;
 
                     // Check if the identifier is a valid UUID
                     try {
                         UUID playerUUID = UUID.fromString(identifier);
+                        getLogger().info("Player UUID: " + playerUUID.toString());
                         playerData = serverDataExporter.getPlayerDataByUUID(playerUUID);
                     } catch (IllegalArgumentException e) {
                         // Identifier is not a valid UUID
+                        getLogger().warning("Invalid UUID: " + identifier);
                         playerData = null;
                     }
 
@@ -109,6 +115,7 @@ public final class HynseAPI extends JavaPlugin {
             e.printStackTrace();
         }
     }
+
 
     private boolean isRateLimited(String clientIP) {
         RateLimiter rateLimiter = RATE_LIMITERS.computeIfAbsent(clientIP, k -> new RateLimiter(MAX_REQUESTS_PER_MINUTE, 1, TimeUnit.MINUTES));
